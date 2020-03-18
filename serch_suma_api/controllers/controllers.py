@@ -24,11 +24,13 @@ class SerchSumaApi(http.Controller):
         # 4. Payment Reference[Referencia]: Comentarioxxx
         # 5. Payment Amount[Monto]:  15,234
 
-        # def action_invoice_register_payment(self):
-        #     return self.env['account.payment']\
-        #         .with_context(active_ids=self.ids, active_model='account.move', active_id=self.id)\
-        #         .action_register_payment()
-
+        jid = int(jid)
+        amount = kw.get('Monto', False) or kw.get('monto', False)
+        if not amount:
+            return json.dumps({
+                _('status'): 404,
+                _('message'): _("Amount missing! Please, provide 'monto'.")
+            })
 
         invoice_date = kw.get('Fecha_Real', False) or kw.get('fecha_real', False)
         payment_date = kw.get('Fecha', False) or kw.get('fecha', False)
@@ -47,29 +49,47 @@ class SerchSumaApi(http.Controller):
         
         Move = request.env['account.move'].sudo()
         Payment = request.env['account.payment'].sudo()
-        journal_id = request.env['account.journal'].sudo().search([('id', '=', jid)])
 
         move_to_find = [
-            ('name', '=', kw.get('Folio', False) or kw.get('folio', False)),
+            ('name', '=', kw.get('Folio', False) or kw.get('folio', False)), '|',
+            ('ref', '=', kw.get('Referencia', False) or kw.get('referencia', False)),
             ('invoice_payment_ref', '=', kw.get('Referencia', False) or kw.get('referencia', False)),
             ('invoice_date', '=', invoice_date),
         ]
 
         moves = Move.search(move_to_find)
-        payments = Payment.search([('invoice_ids.id', 'in', moves.ids)])
+        payments = Payment.search(['&', '&', '&', ('invoice_ids.id', 'in', moves.ids), ('state', '=', 'draft'), ('amount', '=', amount), ('payment_date', '=', payment_date)])
 
-        others = Payment.search([])
-        print(others)
-        for o in others:
-            print(o['name'])
-        
-        print(moves.ids)
-        print(payments)
+        # print('payments', payments.ids)
         for p in payments:
-            p['journal_id'] = journal_id
-            p['payment_date'] = payment_date
-            p['amount'] = kw.get('Monto', False) or kw.get('monto', False)
+            p['payment_type'] = 'outbound'
 
+        partner_id = None
+        for m in moves:
+            partner_id = m['partner_id']
+        
+        if (len(payments.ids) == 0):
+            payments = Payment.create({
+                'payment_date': payment_date,
+                'partner_type': 'customer',
+                'payment_type': 'inbound',
+                'payment_method_id': 1,
+                'journal_id': jid,
+                'amount': amount,
+                'state': 'draft',
+                'invoice_ids': moves.ids,
+                'partner_id': partner_id.id,
+            })
+
+            payments.default_get(['company_id', 'payment_method_id', 'journal_id'])
+
+            for m in moves:
+                for l in m['line_ids']:
+                    for p in payments:
+                        l['payment_id'] = p
+        
+        # print('payments: ', payments.ids)
+        # print('moves: ', moves.ids)
         result = None
         try: 
             result = payments.post()
