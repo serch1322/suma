@@ -50,10 +50,9 @@ class SerchSumaApi(http.Controller):
         Move = request.env['account.move'].sudo()
         Payment = request.env['account.payment'].sudo()
 
+        ref = kw.get('Referencia', False) or kw.get('referencia', False)
         move_to_find = [
-            ('name', '=', kw.get('Folio', False) or kw.get('folio', False)), '|',
-            ('ref', '=', kw.get('Referencia', False) or kw.get('referencia', False)),
-            ('invoice_payment_ref', '=', kw.get('Referencia', False) or kw.get('referencia', False)),
+            ('name', '=', kw.get('Folio', False) or kw.get('folio', False)),
             ('invoice_date', '=', invoice_date),
         ]
 
@@ -75,6 +74,7 @@ class SerchSumaApi(http.Controller):
                 'state': 'draft',
                 'invoice_ids': moves.ids,
                 'partner_id': partner_id.id,
+                'payment_reference': ref,
             })
 
             payments.default_get(['company_id', 'payment_method_id', 'journal_id'])
