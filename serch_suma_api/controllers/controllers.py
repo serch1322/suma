@@ -99,7 +99,7 @@ class SerchSumaApi(http.Controller):
                 _('message'): _("Error: {0}".format(err))
             })
 
-        print(result)
+        # print(result)
         return json.dumps({
             _('status'): 200,
             _('message'): result,
