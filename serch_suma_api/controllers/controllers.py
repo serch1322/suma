@@ -60,10 +60,6 @@ class SerchSumaApi(http.Controller):
         moves = Move.search(move_to_find)
         payments = Payment.search(['&', '&', '&', ('invoice_ids.id', 'in', moves.ids), ('state', '=', 'draft'), ('amount', '=', amount), ('payment_date', '=', payment_date)])
 
-        # print('payments', payments.ids)
-        for p in payments:
-            p['payment_type'] = 'outbound'
-
         partner_id = None
         for m in moves:
             partner_id = m['partner_id']
