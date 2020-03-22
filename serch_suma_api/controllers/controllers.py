@@ -10,21 +10,12 @@ from odoo import _, http
 class SerchSumaApi(http.Controller):
     @http.route('/aplicar_pago', auth='public')
     def index(self, **kw):
-
-        jid = kw.get('jid', False) or kw.get('JID', False)
-        if not jid:
-            return json.dumps({
-                _('status'): 404,
-                _('message'): _("Journal id not found! The 'jid' provided was not found.")
-            })
-
         # 1. Payment Date[Fecha]: 30/01/2020 
         # 2. Invoice Number[Folio] :  V8097 
         # 3. Invoice Date[Fecha_Real]:   25/01/2020 
         # 4. Payment Reference[Referencia]: Comentarioxxx
         # 5. Payment Amount[Monto]:  15,234
 
-        jid = int(jid)
         amount = kw.get('Monto', False) or kw.get('monto', False)
         if not amount:
             return json.dumps({
@@ -69,7 +60,7 @@ class SerchSumaApi(http.Controller):
                 'partner_type': 'customer',
                 'payment_type': 'inbound',
                 'payment_method_id': 1,
-                'journal_id': jid,
+                'journal_id': 7,
                 'amount': amount,
                 'state': 'draft',
                 'invoice_ids': moves.ids,
